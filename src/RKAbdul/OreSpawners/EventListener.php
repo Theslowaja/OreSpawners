@@ -17,9 +17,6 @@ use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockUpdateEvent;
 
-use RKAbdul\OreSpawners\libs\DenielWorld\EzTiles\data\TileInfo;
-use RKAbdul\OreSpawners\libs\DenielWorld\EzTiles\tile\SimpleTile;
-
 class EventListener implements Listener
 {
 
@@ -47,17 +44,17 @@ class EventListener implements Listener
         }
 
         if (in_array($bbelow->getId(), $blocks)) {
-            $tile = $event->getBlock()->getLevel()->getTile($bbelow);
+            $tile = $event->getBlock()->getWorld()->getTile($bbelow);
             if (!$tile instanceof SimpleTile) return;
             $ore = $this->checkBlock($bbelow);
             $delay = $this->getDelay($bbelow);
             if (!$event->isCancelled()) {
-                $event->setCancelled(true);
+                $event->cancel();
                 if ($event->getBlock()->getId() == $ore->getId()) return;
                 $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(function (int $currentTick) use ($event, $ore): void {
-                    if ($event->getBlock()->getLevel() !== null) {
-                        $event->getBlock()->getLevel()->setBlock($event->getBlock()->floor(), $ore, false, true);
-                        if ($this->cfg["fizz-sound"] == true) $event->getBlock()->getLevel()->addSound(new FizzSound($event->getBlock()->asVector3()));
+                    if ($event->getBlock()->getWorld() !== null) {
+                        $event->getBlock()->getWorld()->getPosition()->setBlock($event->getBlock()->floor(), $ore, false, true);
+                        //if ($this->cfg["fizz-sound"] == true) $event->getBlock()->getLevel()->addSound(new FizzSound($event->getBlock()->asVector3()));
                     }
                 }), intval($delay));
             }
@@ -76,25 +73,25 @@ class EventListener implements Listener
         $redstoneid = intval($this->cfg["ore-generator-blocks"]["redstone"]);
         switch ($bbid) {
             case $coalid:
-                $ore = Block::get(Block::COAL_ORE);
+                $ore = BlockFactory::getInstance()->get(VanillaBlocks::COAL_ORE(), 0);
                 break;
             case $ironid:
-                $ore = Block::get(Block::IRON_ORE);
+                $ore = BlockFactory::getInstance()->get(VanillaBlocks::IRON_ORE(), 0);
                 break;
             case $goldid:
-                $ore = Block::get(Block::GOLD_ORE);
+                $ore = BlockFactory::getInstance()->get(VanillaBlocks::GOLD_ORE(), 0);
                 break;
             case $diamondid:
-                $ore = Block::get(Block::DIAMOND_ORE);
+                $ore = BlockFactory::getInstance()->get(VanillaBlocks::DIAMOND_ORE(), 0);
                 break;
             case $emeraldid:
-                $ore = Block::get(Block::EMERALD_ORE);
+                $ore = BlockFactory::getInstance()->get(VanillaBlocks::EMERALD_ORE(), 0);
                 break;
             case $lapizid:
-                $ore = Block::get(Block::LAPIS_ORE);
+                $ore =BlockFactory::getInstance()->get(VanillaBlocks::LAPIS_ORE(), 0);
                 break;
             case $redstoneid:
-                $ore = Block::get(Block::REDSTONE_ORE);
+                $ore = BlockFactory::getInstance()->get(VanillaBlocks::REDSTONE_ORE(), 0);
                 break;
         }
         if (isset($ore)) {
@@ -105,7 +102,7 @@ class EventListener implements Listener
 
     public function getDelay(Block $block)
     {
-        $tile = $block->getLevel()->getTile($block->asVector3());
+        $tile = $block->getWorld()->getTile($block->asVector3());
         $stacked = $tile->getData("stacked")->getValue();
         $base = intval($this->cfg["base-delay"]);
         return ($base / $stacked) * 20;
@@ -126,15 +123,15 @@ class EventListener implements Listener
                 $tile = $event->getPlayer()->getLevel()->getTile($event->getBlock()->asVector3());
                 if (!$tile instanceof SimpleTile) {
                     $tileinfo = new TileInfo($event->getBlock(), ["id" => "simpleTile", "stacked" => 1]);
-                    new SimpleTile($event->getPlayer()->getLevel(), $tileinfo);
+                    new SimpleTile($event->getPlayer()->getWorld(), $tileinfo);
                 }
             }
         }
         
         $block = $event->getBlock();
-        $bbelow = $block->getLevel()->getBlock($event->getBlock()->floor()->down(1));
+        $bbelow = $block->getWorld()->getPosition()->getBlock($event->getBlock()->floor()->down(1));
         if ($this->checkBlock($bbelow)) {
-            $event->setCancelled(true);
+            $event->cancel();
             $event->getPlayer()->sendMessage(Tf::RED . "You can not place blocks over an OreSpawner!");
         }
     }
@@ -156,7 +153,7 @@ class EventListener implements Listener
                     if (in_array($item->getId(), $blocks) && $item->getNamedTag()->hasTag("orespawner")) {
                         if ($event->getBlock()->getId() == $item->getId()) {
                             if (!($stacked >= intval($this->cfg["max"]))) {
-                                $event->setCancelled(true);
+                                $event->cancel(=);
                                 $tile->setData("stacked", $stacked + 1);
                                 $item->setCount($item->getCount() - 1);
                                 $player->getInventory()->setItem($player->getInventory()->getHeldItemIndex(), $item);
