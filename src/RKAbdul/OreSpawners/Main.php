@@ -9,7 +9,7 @@ use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\nbt\tag\StringTag;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\TextFormat as TF;
 use function file_exists;
@@ -26,7 +26,7 @@ class Main extends PluginBase
      *
      * @return void
      */
-    public function onEnable()
+    public function onEnable(): void
     {
         $this->cfg = $this->getConfig()->getAll();
 
@@ -61,7 +61,7 @@ class Main extends PluginBase
             if (!isset($args[0])) {
                 $sender->sendMessage(TF::RED . "You must provide some arguments!");
                 return false;
-            } else if (isset($args[2]) && !$this->getServer()->getPlayer($args[2])) {
+            } else if (isset($args[2]) && !$this->getServer()->getPlayerByPrefix($args[2])) {
                 $sender->sendMessage(TF::RED . "You must provide a valid player!");
                 return false;
             } else if (!isset($args[0]) || !in_array(strtolower($args[0]), $typesArray)) {
@@ -71,7 +71,7 @@ class Main extends PluginBase
                 $sender->sendMessage(TF::RED . "You must provide a valid amount!");
                 return false;
             }
-            $player = isset($args[2]) ? $this->getServer()->getPlayer($args[2]) : $sender;
+            $player = isset($args[2]) ? $this->getServer()->getPlayerByPrefix($args[2]) : $sender;
             if (!$player instanceof Player) return false;
             $ore = strtolower($args[0]);
             $amount = isset($args[1]) ? intval($args[1]) : 1;
